@@ -54,19 +54,8 @@ public class SellerDaoJDBC implements SellerDao {
 			rs = st.executeQuery();
 			if (rs.next()) { // vericando se o proximo campo é null, sendo null a verificação para, o retorno
 								// de dados acaba;
-				Department dep = new Department();
-				// instanciando um objeto para receber os dados do BD;
-				dep.setId(rs.getInt("DepartmentId"));
-				dep.setName(rs.getString("DepName"));
-				Seller obj = new Seller();
-				obj.setId(rs.getInt("Id"));
-				obj.setName(rs.getString("Name"));
-				obj.setEmail(rs.getString("Email"));
-				obj.setBaseSalary(rs.getDouble("BaseSalary"));
-				obj.setBirthDate(rs.getDate("BirthDate"));
-				obj.setDepartment(dep);
-				// no caso o objeto Seller recebe o objeto Dep em seu campo, pois o retorno é de
-				// um objeto Seller;
+				Department dep = instantiateDepartment(rs);
+				Seller obj = instantiateSeller(rs, dep);
 				return obj;
 			}
 			return null;
@@ -77,6 +66,26 @@ public class SellerDaoJDBC implements SellerDao {
 			DB.closeResultSet(rs);
 			// não há necessidade de fechar a conexão, pois será reutilizada, ela é instanciada pelo DaoFactory;
 		}
+	}
+
+	private Seller instantiateSeller(ResultSet rs, Department dep) throws SQLException {
+		Seller obj = new Seller();
+		obj.setId(rs.getInt("Id"));
+		obj.setName(rs.getString("Name"));
+		obj.setEmail(rs.getString("Email"));
+		obj.setBaseSalary(rs.getDouble("BaseSalary"));
+		obj.setBirthDate(rs.getDate("BirthDate"));
+		obj.setDepartment(dep);
+		// no caso o objeto Seller recebe o objeto Dep em seu campo, pois o retorno é de
+		// um objeto Seller;
+		return obj;
+	}
+
+	private Department instantiateDepartment(ResultSet rs) throws SQLException {
+		Department dep = new Department();		
+		dep.setId(rs.getInt("DepartmentId")); // a exceção foi propagada por conta de estar sendo tratada no Seller findById;
+		dep.setName(rs.getString("DepName"));
+		return dep;
 	}
 
 	@Override
