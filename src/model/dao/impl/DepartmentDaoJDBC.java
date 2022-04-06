@@ -6,12 +6,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import db.DB;
 import db.DbException;
+import db.DbIntegrityException;
 import model.dao.DepartmentDao;
 import model.entities.Department;
 
@@ -39,17 +38,16 @@ public class DepartmentDaoJDBC implements DepartmentDao {
 	public void insert(Department obj) {
 		PreparedStatement st = null;
 				try {
-					st = conn.prepareStatement("INSERT INTO department (id, name) VALUES (? , ?)",
+					st = conn.prepareStatement("INSERT INTO department (name) VALUES (?)",
+							// não há necessidade do id;
 							Statement.RETURN_GENERATED_KEYS);
 					
-					st.setInt(1, obj.getId());
-					st.setString(2,  obj.getName());
+					st.setString(1, obj.getName());
 					
 					int rowsAffected = st.executeUpdate();
 					
 					if(rowsAffected > 0) {
-						ResultSet rs = st.getGeneratedKeys();
-						
+						ResultSet rs = st.getGeneratedKeys();						
 						if(rs.next()) {
 							int id = rs.getInt(1);
 							obj.setId(id);
@@ -102,7 +100,7 @@ public class DepartmentDaoJDBC implements DepartmentDao {
 			}			
 		}
 		catch (SQLException e) {
-			throw new DbException(e.getMessage());
+			throw new DbIntegrityException(e.getMessage());
 		}
 		finally {
 			DB.closeStatement(st);
@@ -150,15 +148,11 @@ public class DepartmentDaoJDBC implements DepartmentDao {
 			rs = st.executeQuery();
 			
 			List<Department> list = new ArrayList<>();
-			Map<Integer, Department> map = new HashMap<>();
+			//Map<Integer, Department> map = new HashMap<>(); 
+			//sem necessidade, porque não está sendo instanciado um outro objeto proveniente de department;
 			
 			while(rs.next()) {
-				Department dep = map.get(rs.getInt("Id"));
-				
-				if(dep == null) {
-					dep = instantiateDepartment(rs);
-					map.put(rs.getInt("Id"), dep);
-				}				
+				Department 	dep = instantiateDepartment(rs);
 				list.add(dep);
 			}
 			return list;			
