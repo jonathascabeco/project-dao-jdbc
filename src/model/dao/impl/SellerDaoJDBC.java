@@ -30,12 +30,8 @@ public class SellerDaoJDBC implements SellerDao {
 	public void insert(Seller obj) {
 		PreparedStatement st = null;
 		try {
-			st = conn.prepareStatement(
-					"INSERT INTO seller "
-					+ "(Name, Email, BirthDate, BaseSalary, DepartmentId) "
-					+ "VALUES "
-					+ "(?, ?, ?, ?, ?)",
-					Statement.RETURN_GENERATED_KEYS);// retorna o id inserido;
+			st = conn.prepareStatement("INSERT INTO seller " + "(Name, Email, BirthDate, BaseSalary, DepartmentId) "
+					+ "VALUES " + "(?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);// retorna o id inserido;
 
 			st.setString(1, obj.getName());
 			st.setString(2, obj.getEmail());
@@ -52,22 +48,36 @@ public class SellerDaoJDBC implements SellerDao {
 					obj.setId(id);
 				}
 				DB.closeResultSet(rs);// foi criado no escopo de if, entao nao entro no bloco finally;
-			}
-			else {
+			} else {
 				throw new DbException("Unexpected error! No rows affected!");
 			}
-		}
-		catch (SQLException e) {
+		} catch (SQLException e) {
 			throw new DbException(e.getMessage());
-		}
-		finally {
+		} finally {
 			DB.closeStatement(st);
 		}
 	}
 
 	@Override
 	public void update(Seller obj) {
-		// TODO Auto-generated method stub
+		// Parecido com o insert;
+		PreparedStatement st = null;
+		try {
+			st = conn.prepareStatement("UPDATE seller "
+					+ "SET Name = ?, Email = ?, BirthDate = ?, BaseSalary = ?, DepartmentId = ? " + "WHERE Id = ?");
+
+			st.setString(1, obj.getName());
+			st.setString(2, obj.getEmail());
+			st.setDate(3, new java.sql.Date(obj.getBirthDate().getTime()));
+			st.setDouble(4, obj.getBaseSalary());
+			st.setInt(5, obj.getDepartment().getId());
+			st.setInt(6, obj.getId());
+			st.executeUpdate();
+		} catch (SQLException e) {
+			throw new DbException(e.getMessage());
+		} finally {
+			DB.closeStatement(st);
+		}
 
 	}
 
@@ -83,10 +93,8 @@ public class SellerDaoJDBC implements SellerDao {
 		ResultSet rs = null;
 		try {
 			st = conn.prepareStatement(
-					"SELECT seller.*,department.Name as DepName "
-							+ "FROM seller INNER JOIN department "
-							+ "ON seller.DepartmentId = department.Id "
-							+ "WHERE seller.Id = ?");
+					"SELECT seller.*,department.Name as DepName " + "FROM seller INNER JOIN department "
+							+ "ON seller.DepartmentId = department.Id " + "WHERE seller.Id = ?");
 			st.setInt(1, id);
 			rs = st.executeQuery();
 			if (rs.next()) { // vericando se o proximo campo é null, sendo null a verificação para, o retorno
@@ -101,7 +109,8 @@ public class SellerDaoJDBC implements SellerDao {
 		} finally {
 			DB.closeStatement(st);
 			DB.closeResultSet(rs);
-			// não há necessidade de fechar a conexão, pois será reutilizada, ela é instanciada pelo DaoFactory;
+			// não há necessidade de fechar a conexão, pois será reutilizada, ela é
+			// instanciada pelo DaoFactory;
 		}
 	}
 
@@ -119,8 +128,9 @@ public class SellerDaoJDBC implements SellerDao {
 	}
 
 	private Department instantiateDepartment(ResultSet rs) throws SQLException {
-		Department dep = new Department();		
-		dep.setId(rs.getInt("DepartmentId")); // a exceção foi propagada por conta de estar sendo tratada no Seller findById;
+		Department dep = new Department();
+		dep.setId(rs.getInt("DepartmentId")); // a exceção foi propagada por conta de estar sendo tratada no Seller
+												// findById;
 		dep.setName(rs.getString("DepName"));
 		return dep;
 	}
@@ -132,24 +142,22 @@ public class SellerDaoJDBC implements SellerDao {
 		ResultSet rs = null;
 		try {
 			st = conn.prepareStatement(
-					"SELECT seller.*,department.Name as DepName " 
-					+"FROM seller INNER JOIN department "
-					+"ON seller.DepartmentId = department.Id "
-					+"ORDER BY Name");
-				
+					"SELECT seller.*,department.Name as DepName " + "FROM seller INNER JOIN department "
+							+ "ON seller.DepartmentId = department.Id " + "ORDER BY Name");
+
 			rs = st.executeQuery();
 			List<Seller> list = new ArrayList<>();
 			Map<Integer, Department> map = new HashMap<>();
-			
-			while (rs.next()) { 
-				
-				Department dep =  map.get(rs.getInt("DepartmentId"));
-				
-				if(dep == null) {
-					dep =  instantiateDepartment(rs);
+
+			while (rs.next()) {
+
+				Department dep = map.get(rs.getInt("DepartmentId"));
+
+				if (dep == null) {
+					dep = instantiateDepartment(rs);
 					map.put(rs.getInt("DepartmentId"), dep);
 				}
-				
+
 				Seller obj = instantiateSeller(rs, dep);
 				list.add(obj);
 			}
@@ -167,31 +175,31 @@ public class SellerDaoJDBC implements SellerDao {
 		PreparedStatement st = null;
 		ResultSet rs = null;
 		try {
-			st = conn.prepareStatement(
-					"SELECT seller.*,department.Name as DepName " //não esquecer o espaço;
-					+"FROM seller INNER JOIN department "
-					+"ON seller.DepartmentId = department.Id "
-					+"WHERE DepartmentId = ? "
-					+"ORDER BY Name");
-			
+			st = conn.prepareStatement("SELECT seller.*,department.Name as DepName " // não esquecer o espaço;
+					+ "FROM seller INNER JOIN department " + "ON seller.DepartmentId = department.Id "
+					+ "WHERE DepartmentId = ? " + "ORDER BY Name");
+
 			st.setInt(1, department.getId());
 			rs = st.executeQuery();
 			List<Seller> list = new ArrayList<>();
 			Map<Integer, Department> map = new HashMap<>();
-			// utilizado para fazer uma rotina de verificação de igualdade de id, para não instanciar varios objetos Departament
-			// o departmant possui varios vendedores, mas os vendedores nao possuem um department exclusivo;
-			while (rs.next()) { 
-			// por ter possibilidade de vários objs como retorno, o while foi implementado; 
-				
-				Department dep =  map.get(rs.getInt("DepartmentId"));
+			// utilizado para fazer uma rotina de verificação de igualdade de id, para não
+			// instanciar varios objetos Departament
+			// o departmant possui varios vendedores, mas os vendedores nao possuem um
+			// department exclusivo;
+			while (rs.next()) {
+				// por ter possibilidade de vários objs como retorno, o while foi implementado;
+
+				Department dep = map.get(rs.getInt("DepartmentId"));
 				// pegando o id do BD, para verificar repetição;
-				
-				if(dep == null) {
-					dep =  instantiateDepartment(rs);
+
+				if (dep == null) {
+					dep = instantiateDepartment(rs);
 					map.put(rs.getInt("DepartmentId"), dep);
-					// atribui o id instanciado ao map para compará-lo com o próximo, dentro do bloco while;
+					// atribui o id instanciado ao map para compará-lo com o próximo, dentro do
+					// bloco while;
 				}
-				
+
 				Seller obj = instantiateSeller(rs, dep);
 				list.add(obj);
 			}
